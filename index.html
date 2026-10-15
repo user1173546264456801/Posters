@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Poster Studio</title>
+  <meta name="description" content="Personnalise les 3 posters de la map et génère ta texture prête à importer.">
+  <meta name="theme-color" content="#0b0915">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+
+  <main class="app">
+    <header class="top">
+      <div>
+        <h1>Poster Studio</h1>
+        <p class="sub">Choisis tes 3 visuels, place-les, génère ta texture.</p>
+      </div>
+      <div class="progress" id="progress" aria-live="polite">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span id="progressText">0/3</span>
+      </div>
+    </header>
+
+    <section class="scenes" id="scenes"></section>
+
+    <footer class="cta">
+      <button class="btn btn-primary btn-xl" id="generateBtn" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+        Générer mes posters
+      </button>
+      <p class="hint" id="ctaHint">Personnalise les 3 emplacements pour débloquer la génération.</p>
+    </footer>
+  </main>
+
+  <!-- Editor -->
+  <div class="modal" id="editor" hidden>
+    <div class="sheet editor-sheet" role="dialog" aria-modal="true" aria-labelledby="edTitle">
+      <div class="sheet-head">
+        <div>
+          <h2 id="edTitle">Zone</h2>
+          <p class="meta" id="edMeta"></p>
+        </div>
+        <button class="icon-btn" data-close aria-label="Fermer">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="stage-wrap" id="stageWrap">
+        <div class="stage" id="stage">
+          <canvas id="imgCanvas"></canvas>
+          <canvas id="maskCanvas"></canvas>
+          <button class="drop" id="dropZone" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+            <strong>Dépose ton image</strong>
+            <span>ou clique pour choisir</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar" id="toolbar">
+        <div class="zoom">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M8 11h6M20 20l-4.5-4.5"/></svg>
+          <input type="range" id="zoom" min="0" max="1000" value="0" aria-label="Zoom">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M8 11h6M11 8v6M20 20l-4.5-4.5"/></svg>
+        </div>
+        <div class="tools">
+          <button class="btn btn-ghost" id="fitBtn" title="Remplir la zone">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Remplir
+          </button>
+          <button class="btn btn-ghost" id="replaceBtn" title="Changer d'image">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/></svg>Changer
+          </button>
+          <label class="swatch" title="Couleur de fond (visible si l'image ne couvre pas tout)">
+            <input type="color" id="bgColor" value="#000000">
+            <span>Fond</span>
+          </label>
+        </div>
+        <button class="btn btn-primary" id="validateBtn" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Valider
+        </button>
+      </div>
+      <p class="gesture-hint">Glisse pour déplacer · molette ou pincement pour zoomer · la zone sombre ne sera pas visible en jeu</p>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="modal" id="result" hidden>
+    <div class="sheet result-sheet" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+      <div class="sheet-head">
+        <div>
+          <h2 id="resTitle">Ta texture est prête</h2>
+          <p class="meta">PNG 1024 × 1024 · alpha inclus · murale ajustée (luminosité 80 %, saturation −10 %)</p>
+        </div>
+        <button class="icon-btn" data-close aria-label="Fermer">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="result-preview checker"><img id="resultImg" alt="Aperçu de la texture générée"></div>
+      <div class="result-actions">
+        <label class="field">
+          <span>Ton pseudo</span>
+          <input type="text" id="pseudo" placeholder="optionnel, pour nommer le fichier" maxlength="40" autocomplete="nickname">
+        </label>
+        <a class="btn btn-primary" id="downloadBtn" download="posters.png">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Télécharger
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" hidden>
+
+  <script src="assets/alpha.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
